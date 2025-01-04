@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:anamnesis_app/providers/anamnesis_provider.dart';
 import 'package:anamnesis_app/screens/confirmation_screen.dart';
 import 'package:anamnesis_app/widgets/custom_toggle_button.dart';
 import 'package:anamnesis_app/widgets/custom_button.dart';
@@ -7,41 +9,24 @@ import 'package:anamnesis_app/theme/app_colors.dart';
 import 'package:anamnesis_app/utils/constants.dart';
 
 class AnamnesisStep2 extends StatefulWidget {
-  final String operations;
-  final String illness;
-
-  const AnamnesisStep2({
-    super.key,
-    required this.operations,
-    required this.illness,
-  });
+  const AnamnesisStep2({super.key});
 
   @override
   AnamnesisStep2State createState() => AnamnesisStep2State();
 }
 
 class AnamnesisStep2State extends State<AnamnesisStep2> {
-  bool _hasFrequentPain = false;
-  bool _hasBoneOrJointProblem = false;
-
-  /// Para un control más estricto, podríamos exigir
-  /// que el usuario elija cada opción, sin embargo
-  /// se deja "true" para simplificar el ejemplo.
   bool _isButtonEnabled() {
+    // Podríamos validar que el usuario seleccione algo en cada pregunta,
+    // pero en este ejemplo se deja habilitado siempre.
     return true;
   }
 
-  /// Navega a la pantalla de confirmación
   void _goToConfirmationScreen() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ConfirmationScreen(
-          operations: widget.operations,
-          illness: widget.illness,
-          hasFrequentPain: _hasFrequentPain,
-          hasBoneOrJointProblem: _hasBoneOrJointProblem,
-        ),
+        builder: (_) => const ConfirmationScreen(),
       ),
     );
   }
@@ -49,10 +34,10 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
   @override
   Widget build(BuildContext context) {
     final bool buttonEnabled = _isButtonEnabled();
+    final anamnesisProvider = context.watch<AnamnesisProvider>();
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
           left: Constants.defaultPadding,
@@ -66,7 +51,6 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
           color: AppColors.yellowButtonColor,
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(Constants.defaultPadding),
@@ -79,9 +63,9 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
               const SizedBox(height: 8),
               _buildMandatoryLabel(),
               const SizedBox(height: 24),
-              _buildFrequentPainQuestion(),
+              _buildFrequentPainQuestion(anamnesisProvider),
               const SizedBox(height: 24),
-              _buildBonesJointsQuestion(),
+              _buildBonesJointsQuestion(anamnesisProvider),
             ],
           ),
         ),
@@ -89,7 +73,6 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
     );
   }
 
-  /// Header con flecha y título
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
@@ -114,7 +97,6 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
     );
   }
 
-  /// Título de la sección
   Widget _buildFormTitle() {
     return Text(
       'Completa la siguiente información',
@@ -124,7 +106,6 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
     );
   }
 
-  /// Texto "Todos los campos son obligatorios*"
   Widget _buildMandatoryLabel() {
     return RichText(
       text: TextSpan(
@@ -150,8 +131,7 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
     );
   }
 
-  /// Pregunta: "¿Tiene dolores frecuentes...?"
-  Widget _buildFrequentPainQuestion() {
+  Widget _buildFrequentPainQuestion(AnamnesisProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -183,22 +163,18 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
             Expanded(
               child: CustomToggleButton(
                 text: 'Sí',
-                isSelected: _hasFrequentPain,
+                isSelected: provider.hasFrequentPain,
                 onPressed: () {
-                  setState(() {
-                    _hasFrequentPain = true;
-                  });
+                  provider.hasFrequentPain = true;
                 },
               ),
             ),
             Expanded(
               child: CustomToggleButton(
                 text: 'No',
-                isSelected: !_hasFrequentPain,
+                isSelected: !provider.hasFrequentPain,
                 onPressed: () {
-                  setState(() {
-                    _hasFrequentPain = false;
-                  });
+                  provider.hasFrequentPain = false;
                 },
               ),
             ),
@@ -208,8 +184,7 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
     );
   }
 
-  /// Pregunta: "¿Le ha dicho el médico que tiene algún problema...?"
-  Widget _buildBonesJointsQuestion() {
+  Widget _buildBonesJointsQuestion(AnamnesisProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -242,22 +217,18 @@ class AnamnesisStep2State extends State<AnamnesisStep2> {
             Expanded(
               child: CustomToggleButton(
                 text: 'Sí',
-                isSelected: _hasBoneOrJointProblem,
+                isSelected: provider.hasBoneOrJointProblem,
                 onPressed: () {
-                  setState(() {
-                    _hasBoneOrJointProblem = true;
-                  });
+                  provider.hasBoneOrJointProblem = true;
                 },
               ),
             ),
             Expanded(
               child: CustomToggleButton(
                 text: 'No',
-                isSelected: !_hasBoneOrJointProblem,
+                isSelected: !provider.hasBoneOrJointProblem,
                 onPressed: () {
-                  setState(() {
-                    _hasBoneOrJointProblem = false;
-                  });
+                  provider.hasBoneOrJointProblem = false;
                 },
               ),
             ),

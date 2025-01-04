@@ -1,25 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:anamnesis_app/providers/anamnesis_provider.dart';
 import 'package:anamnesis_app/theme/app_colors.dart';
 import 'package:anamnesis_app/theme/app_text_styles.dart';
 
 class ConfirmationScreen extends StatelessWidget {
-  final String operations;
-  final String illness;
-  final bool hasFrequentPain;
-  final bool hasBoneOrJointProblem;
-
-  const ConfirmationScreen({
-    super.key,
-    required this.operations,
-    required this.illness,
-    required this.hasFrequentPain,
-    required this.hasBoneOrJointProblem,
-  });
+  const ConfirmationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Obtenemos los datos directamente del Provider
+    final anamnesisProvider = context.watch<AnamnesisProvider>();
+
     return Scaffold(
-      resizeToAvoidBottomInset: true, 
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Container(
           color: AppColors.darkBackground,
@@ -49,15 +43,15 @@ class ConfirmationScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildDataRow('Operaciones:', operations),
-                      _buildDataRow('Enfermedades:', illness),
+                      _buildDataRow('Operaciones:', anamnesisProvider.operations),
+                      _buildDataRow('Enfermedades:', anamnesisProvider.illness),
                       _buildDataRow(
                         'Dolores frecuentes:',
-                        hasFrequentPain ? 'Sí' : 'No',
+                        anamnesisProvider.hasFrequentPain ? 'Sí' : 'No',
                       ),
                       _buildDataRow(
                         'Problema en huesos/articulaciones:',
-                        hasBoneOrJointProblem ? 'Sí' : 'No',
+                        anamnesisProvider.hasBoneOrJointProblem ? 'Sí' : 'No',
                       ),
                     ],
                   ),
@@ -70,7 +64,6 @@ class ConfirmationScreen extends StatelessWidget {
     );
   }
 
-  /// Header con flecha y título "Confirmación"
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
@@ -95,7 +88,6 @@ class ConfirmationScreen extends StatelessWidget {
     );
   }
 
-  /// Muestra pares [label: valor]
   Widget _buildDataRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

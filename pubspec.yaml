@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
+  provider: ^6.0.5  # <-- Se agrega la dependencia para Provider
 
 dev_dependencies:
   flutter_test:
@@ -28,4 +29,3 @@ flutter:
           weight: 500
         - asset: assets/fonts/Futura-Light.ttf
           weight: 300
-

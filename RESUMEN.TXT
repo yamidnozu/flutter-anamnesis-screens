@@ -1,0 +1,1149 @@
+
+/* Directorio:  */
+├── analysis_options.yaml [30]
+├── 📂 lib
+│   ├── main.dart [33]
+│   ├── 📂 providers
+│   │   └── anamnesis_provider.dart [42]
+│   ├── 📂 screens
+│   │   ├── anamnesis_step1.dart [244]
+│   │   ├── anamnesis_step2.dart [241]
+│   │   └── confirmation_screen.dart [116]
+│   ├── 📂 theme
+│   │   ├── app_colors.dart [12]
+│   │   └── app_text_styles.dart [55]
+│   ├── 📂 utils
+│   │   ├── constants.dart [8]
+│   │   └── screen_size.dart [27]
+│   └── 📂 widgets
+│       ├── custom_button.dart [48]
+│       ├── custom_text_field.dart [70]
+│       └── custom_toggle_button.dart [46]
+├── pubspec.yaml [32]
+├── 📂 test
+│   └── widget_test.dart [31]
+├── 📂 web
+│   └── manifest.json [36]
+
+
+Total de líneas resumidas: 1071
+
+
+/* Inicio analysis_options.yaml */
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at
+  # https://dart-lang.github.io/linter/lints/index.html.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+
+/* Fin analysis_options.yaml */
+
+/* Inicio lib\main.dart */
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:anamnesis_app/providers/anamnesis_provider.dart';
+import 'package:anamnesis_app/screens/anamnesis_step1.dart';
+import 'package:anamnesis_app/theme/app_colors.dart';
+
+void main() {
+  runApp(
+    /// Inyectamos el Provider en lo más alto de la app
+    ChangeNotifierProvider(
+      create: (_) => AnamnesisProvider(),
+      child: const MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Anamnesis App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: AppColors.darkBackground,
+      ),
+      home: const AnamnesisStep1(),
+    );
+  }
+}
+
+/* Fin lib\main.dart */
+
+/* Inicio lib\providers\anamnesis_provider.dart */
+import 'package:flutter/material.dart';
+
+/// Maneja todos los campos de Anamnesis en un ChangeNotifier,
+/// de manera que cualquier widget que escuche a este provider
+/// se actualizará automáticamente cuando cambie algún valor.
+class AnamnesisProvider extends ChangeNotifier {
+  String _operations = '';
+  String _illness = '';
+  bool _hasFrequentPain = false;
+  bool _hasBoneOrJointProblem = false;
+
+  // Getters
+  String get operations => _operations;
+  String get illness => _illness;
+  bool get hasFrequentPain => _hasFrequentPain;
+  bool get hasBoneOrJointProblem => _hasBoneOrJointProblem;
+
+  // Setters con notificación a los listeners
+  set operations(String value) {
+    _operations = value;
+    notifyListeners();
+  }
+
+  set illness(String value) {
+    _illness = value;
+    notifyListeners();
+  }
+
+  set hasFrequentPain(bool value) {
+    _hasFrequentPain = value;
+    notifyListeners();
+  }
+
+  set hasBoneOrJointProblem(bool value) {
+    _hasBoneOrJointProblem = value;
+    notifyListeners();
+  }
+
+  /// Valida si ambos campos de la primera pantalla están completos
+  bool get isStep1Valid => _operations.isNotEmpty && _illness.isNotEmpty;
+}
+
+/* Fin lib\providers\anamnesis_provider.dart */
+
+/* Inicio lib\screens\anamnesis_step1.dart */
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:anamnesis_app/providers/anamnesis_provider.dart';
+import 'package:anamnesis_app/screens/anamnesis_step2.dart';
+import 'package:anamnesis_app/widgets/custom_text_field.dart';
+import 'package:anamnesis_app/widgets/custom_button.dart';
+import 'package:anamnesis_app/theme/app_text_styles.dart';
+import 'package:anamnesis_app/theme/app_colors.dart';
+import 'package:anamnesis_app/utils/constants.dart';
+
+class AnamnesisStep1 extends StatefulWidget {
+  const AnamnesisStep1({super.key});
+
+  @override
+  AnamnesisStep1State createState() => AnamnesisStep1State();
+}
+
+class AnamnesisStep1State extends State<AnamnesisStep1> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _operationsController;
+  late TextEditingController _illnessController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tomamos el estado actual del Provider para rellenar los controladores
+    final provider = context.read<AnamnesisProvider>();
+    _operationsController = TextEditingController(text: provider.operations);
+    _illnessController = TextEditingController(text: provider.illness);
+  }
+
+  @override
+  void dispose() {
+    _operationsController.dispose();
+    _illnessController.dispose();
+    super.dispose();
+  }
+
+  bool _isButtonEnabled(AnamnesisProvider provider) {
+    // Validamos a partir del provider (puede ser provider.isStep1Valid)
+    return provider.isStep1Valid;
+  }
+
+  void _goToStep2() {
+    if (_formKey.currentState!.validate()) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AnamnesisStep2()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Escuchamos los cambios del provider para refrescar la UI (usamos watch).
+    final anamnesisProvider = context.watch<AnamnesisProvider>();
+    final buttonEnabled = _isButtonEnabled(anamnesisProvider);
+
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          left: Constants.defaultPadding,
+          right: Constants.defaultPadding,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: CustomButton(
+          text: 'Siguiente',
+          onPressed: buttonEnabled ? _goToStep2 : null,
+          isEnabled: buttonEnabled,
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(Constants.defaultPadding),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: 24),
+                _buildFormTitle(),
+                _buildMandatoryLabel(),
+                const SizedBox(height: 24),
+                _buildOperationsField(anamnesisProvider),
+                const SizedBox(height: 24),
+                _buildIllnessField(anamnesisProvider),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        if (Navigator.of(context).canPop())
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(
+              Icons.chevron_left,
+              color: Colors.white,
+            ),
+          ),
+        Expanded(
+          child: Text(
+            'Bienvenido a tu nuevo comienzo',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyLight14.copyWith(
+              color: const Color(0xFFC0C5E0),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormTitle() {
+    return Text(
+      'Completa la siguiente información',
+      style: AppTextStyles.bodyMedium16.copyWith(
+        color: AppColors.whiteColor,
+      ),
+    );
+  }
+
+  Widget _buildMandatoryLabel() {
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: 'Todos los campos son obligatorios',
+            style: AppTextStyles.bodyDefault16.copyWith(
+              color: AppColors.whiteColor,
+            ),
+          ),
+          const TextSpan(
+            text: '*',
+            style: TextStyle(
+              fontFamily: 'Futura Bk BT',
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              height: 1.5,
+              color: AppColors.asteriscColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOperationsField(AnamnesisProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RichText(
+          text: TextSpan(
+            style: AppTextStyles.bodyDefault16.copyWith(
+              color: AppColors.whiteColor,
+            ),
+            children: const [
+              TextSpan(
+                text: '¿Ha tenido operaciones? ¿Cuáles y hace cuánto tiempo?',
+              ),
+              TextSpan(
+                text: '*',
+                style: TextStyle(
+                  fontFamily: 'Futura Bk BT',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                  color: AppColors.asteriscColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        CustomTextField(
+          controller: _operationsController,
+          hintText: 'Escribe aquí',
+          onChanged: (value) {
+            provider.operations = value;
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Este campo es obligatorio';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIllnessField(AnamnesisProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RichText(
+          text: TextSpan(
+            style: AppTextStyles.bodyDefault16.copyWith(
+              color: AppColors.whiteColor,
+            ),
+            children: const [
+              TextSpan(
+                text:
+                    '¿Tiene o tuvo alguna enfermedad diagnosticada o tratada por un médico?',
+              ),
+              TextSpan(
+                text: '*',
+                style: TextStyle(
+                  fontFamily: 'Futura Bk BT',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                  color: AppColors.asteriscColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        CustomTextField(
+          controller: _illnessController,
+          hintText: 'Escribe aquí',
+          onChanged: (value) {
+            provider.illness = value;
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Este campo es obligatorio';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/* Fin lib\screens\anamnesis_step1.dart */
+
+/* Inicio lib\screens\anamnesis_step2.dart */
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:anamnesis_app/providers/anamnesis_provider.dart';
+import 'package:anamnesis_app/screens/confirmation_screen.dart';
+import 'package:anamnesis_app/widgets/custom_toggle_button.dart';
+import 'package:anamnesis_app/widgets/custom_button.dart';
+import 'package:anamnesis_app/theme/app_text_styles.dart';
+import 'package:anamnesis_app/theme/app_colors.dart';
+import 'package:anamnesis_app/utils/constants.dart';
+
+class AnamnesisStep2 extends StatefulWidget {
+  const AnamnesisStep2({super.key});
+
+  @override
+  AnamnesisStep2State createState() => AnamnesisStep2State();
+}
+
+class AnamnesisStep2State extends State<AnamnesisStep2> {
+  bool _isButtonEnabled() {
+    // Podríamos validar que el usuario seleccione algo en cada pregunta,
+    // pero en este ejemplo se deja habilitado siempre.
+    return true;
+  }
+
+  void _goToConfirmationScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ConfirmationScreen(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool buttonEnabled = _isButtonEnabled();
+    final anamnesisProvider = context.watch<AnamnesisProvider>();
+
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          left: Constants.defaultPadding,
+          right: Constants.defaultPadding,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: CustomButton(
+          text: 'Siguiente',
+          onPressed: buttonEnabled ? _goToConfirmationScreen : null,
+          isEnabled: buttonEnabled,
+          color: AppColors.yellowButtonColor,
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(Constants.defaultPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 32),
+              _buildFormTitle(),
+              const SizedBox(height: 8),
+              _buildMandatoryLabel(),
+              const SizedBox(height: 24),
+              _buildFrequentPainQuestion(anamnesisProvider),
+              const SizedBox(height: 24),
+              _buildBonesJointsQuestion(anamnesisProvider),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        if (Navigator.of(context).canPop())
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(
+              Icons.chevron_left,
+              color: Colors.white,
+            ),
+          ),
+        Expanded(
+          child: Text(
+            'Bienvenido a tu nuevo comienzo',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyLight14.copyWith(
+              color: const Color(0xFFC0C5E0),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormTitle() {
+    return Text(
+      'Completa la siguiente información',
+      style: AppTextStyles.bodyMedium16.copyWith(
+        color: AppColors.whiteColor,
+      ),
+    );
+  }
+
+  Widget _buildMandatoryLabel() {
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: 'Todos los campos son obligatorios',
+            style: AppTextStyles.bodyDefault16.copyWith(
+              color: AppColors.whiteColor,
+            ),
+          ),
+          const TextSpan(
+            text: '*',
+            style: TextStyle(
+              fontFamily: 'Futura Bk BT',
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              height: 1.5,
+              color: AppColors.asteriscColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFrequentPainQuestion(AnamnesisProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RichText(
+          text: TextSpan(
+            style: AppTextStyles.bodyDefault16.copyWith(
+              color: AppColors.whiteColor,
+            ),
+            children: const [
+              TextSpan(
+                text: '¿Tiene dolores frecuentes y no ha consultado al médico?',
+              ),
+              TextSpan(
+                text: '*',
+                style: TextStyle(
+                  fontFamily: 'Futura Bk BT',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                  color: AppColors.asteriscColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: CustomToggleButton(
+                text: 'Sí',
+                isSelected: provider.hasFrequentPain,
+                onPressed: () {
+                  provider.hasFrequentPain = true;
+                },
+              ),
+            ),
+            Expanded(
+              child: CustomToggleButton(
+                text: 'No',
+                isSelected: !provider.hasFrequentPain,
+                onPressed: () {
+                  provider.hasFrequentPain = false;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBonesJointsQuestion(AnamnesisProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RichText(
+          text: TextSpan(
+            style: AppTextStyles.bodyDefault16.copyWith(
+              color: AppColors.whiteColor,
+            ),
+            children: const [
+              TextSpan(
+                text:
+                    '¿Le ha dicho el médico que tiene algún problema en los huesos o en las articulaciones...?',
+              ),
+              TextSpan(
+                text: '*',
+                style: TextStyle(
+                  fontFamily: 'Futura Bk BT',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                  color: AppColors.asteriscColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: CustomToggleButton(
+                text: 'Sí',
+                isSelected: provider.hasBoneOrJointProblem,
+                onPressed: () {
+                  provider.hasBoneOrJointProblem = true;
+                },
+              ),
+            ),
+            Expanded(
+              child: CustomToggleButton(
+                text: 'No',
+                isSelected: !provider.hasBoneOrJointProblem,
+                onPressed: () {
+                  provider.hasBoneOrJointProblem = false;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/* Fin lib\screens\anamnesis_step2.dart */
+
+/* Inicio lib\screens\confirmation_screen.dart */
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:anamnesis_app/providers/anamnesis_provider.dart';
+import 'package:anamnesis_app/theme/app_colors.dart';
+import 'package:anamnesis_app/theme/app_text_styles.dart';
+
+class ConfirmationScreen extends StatelessWidget {
+  const ConfirmationScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Obtenemos los datos directamente del Provider
+    final anamnesisProvider = context.watch<AnamnesisProvider>();
+
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Container(
+          color: AppColors.darkBackground,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 32),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Text(
+                        '¡Información enviada correctamente!',
+                        style: AppTextStyles.bodyMedium16.copyWith(
+                          color: AppColors.whiteColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      Text(
+                        'Resumen de tus respuestas:',
+                        style: AppTextStyles.bodyDefault16.copyWith(
+                          color: AppColors.whiteColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDataRow('Operaciones:', anamnesisProvider.operations),
+                      _buildDataRow('Enfermedades:', anamnesisProvider.illness),
+                      _buildDataRow(
+                        'Dolores frecuentes:',
+                        anamnesisProvider.hasFrequentPain ? 'Sí' : 'No',
+                      ),
+                      _buildDataRow(
+                        'Problema en huesos/articulaciones:',
+                        anamnesisProvider.hasBoneOrJointProblem ? 'Sí' : 'No',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(
+            Icons.chevron_left,
+            color: Colors.white,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            'Confirmación',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyLight14.copyWith(
+              color: const Color(0xFFC0C5E0),
+            ),
+          ),
+        ),
+        const SizedBox(width: 48), // Espacio para centrar el texto
+      ],
+    );
+  }
+
+  Widget _buildDataRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label ',
+            style: AppTextStyles.bodyDefault16.copyWith(
+              color: AppColors.whiteColor,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: AppTextStyles.bodyDefault16.copyWith(
+                color: AppColors.whiteColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* Fin lib\screens\confirmation_screen.dart */
+
+/* Inicio lib\theme\app_colors.dart */
+import 'package:flutter/material.dart';
+
+class AppColors {
+  static const Color darkBackground = Color(0xFF161621);
+  static const Color whiteColor = Color(0xFFFFFFFF);
+  static const Color borderColor = Color(0xFF343642);
+  static const Color buttonColor = Color(0xFF585853); // Botón gris deshabilitado
+  static const Color yellowButtonColor = Color(0xFFEDC603);
+  static const Color disabledButtonColor = Color(0xFF2E2E37);
+  static const Color asteriscColor = Color(0xFFFF19A3);
+}
+
+/* Fin lib\theme\app_colors.dart */
+
+/* Inicio lib\theme\app_text_styles.dart */
+import 'package:flutter/material.dart';
+
+class AppTextStyles {
+  // Futura Light (14px, w400)
+  static const TextStyle bodyLight14 = TextStyle(
+    fontFamily: 'Futura', // Ajustar con la fuente real si se requiere
+    fontSize: 14.0,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+    letterSpacing: 0.0,
+    decoration: TextDecoration.none,
+  );
+
+  // Futura Medium (16px, w500)
+  static const TextStyle bodyMedium16 = TextStyle(
+    fontFamily: 'Futura',
+    fontSize: 16.0,
+    fontWeight: FontWeight.w500,
+    height: 1.33,
+    letterSpacing: 0.04,
+    decoration: TextDecoration.none,
+  );
+
+  // Futura Book (16px, w400)
+  static const TextStyle bodyDefault16 = TextStyle(
+    fontFamily: 'Futura',
+    fontSize: 16.0,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+    letterSpacing: 0.0,
+    decoration: TextDecoration.none,
+  );
+
+  // Botón principal (Futura Medium 16px)
+  static const TextStyle buttonMainButtons = TextStyle(
+    fontFamily: 'Futura',
+    fontSize: 16.0,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+    letterSpacing: 0.0,
+    decoration: TextDecoration.none,
+  );
+
+  // Placeholder en inputs (Futura Light 14px, italic)
+  static const TextStyle buttonPlaceholderText = TextStyle(
+    fontFamily: 'Futura',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    fontStyle: FontStyle.italic,
+    height: 1.5,
+    letterSpacing: 0.0,
+    decoration: TextDecoration.none,
+  );
+}
+
+/* Fin lib\theme\app_text_styles.dart */
+
+/* Inicio lib\utils\constants.dart */
+class Constants {
+  static const double defaultPadding = 16.0;
+  static const double smallSpace = 8.0;
+  static const double mediumSpace = 16.0;
+  static const double largeSpace = 32.0;
+  static const double withOutSpace = 0;
+}
+
+/* Fin lib\utils\constants.dart */
+
+/* Inicio lib\utils\screen_size.dart */
+import 'package:flutter/material.dart';
+
+class ScreenSize {
+  final double _screenWidth;
+  final double _screenHeight;
+
+  ScreenSize(this._screenWidth, this._screenHeight);
+
+  factory ScreenSize.of(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    return ScreenSize(mediaQuery.size.width, mediaQuery.size.height);
+  }
+
+  double get screenWidth => _screenWidth;
+  double get screenHeight => _screenHeight;
+
+  double getProportionalWidth(double width) {
+    // Diseño base 375px
+    return _screenWidth * width / 375.0;
+  }
+
+  double getProportionalHeight(double height) {
+    // Diseño base 667px
+    return _screenHeight * height / 667.0;
+  }
+}
+
+/* Fin lib\utils\screen_size.dart */
+
+/* Inicio lib\widgets\custom_button.dart */
+import 'package:flutter/material.dart';
+import 'package:anamnesis_app/theme/app_text_styles.dart';
+import 'package:anamnesis_app/theme/app_colors.dart';
+
+class CustomButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isEnabled;
+  final Color? color;
+
+  const CustomButton({
+    super.key,
+    required this.text,
+    this.onPressed,
+    this.isEnabled = false,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color activeColor = color ?? AppColors.yellowButtonColor; // #EDC603
+    final Color effectiveColor =
+        isEnabled ? activeColor : AppColors.buttonColor; // #585853
+
+    return SizedBox(
+      width: double.infinity,
+      height: 50.0,
+      child: ElevatedButton(
+        onPressed: isEnabled ? onPressed : null,
+        style: ElevatedButton.styleFrom(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
+          ),
+          backgroundColor: effectiveColor,
+          disabledBackgroundColor: AppColors.buttonColor,
+          elevation: 0,
+        ),
+        child: Text(
+          text,
+          style: AppTextStyles.buttonMainButtons.copyWith(
+            color: Colors.black,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* Fin lib\widgets\custom_button.dart */
+
+/* Inicio lib\widgets\custom_text_field.dart */
+import 'package:flutter/material.dart';
+import 'package:anamnesis_app/theme/app_colors.dart';
+import 'package:anamnesis_app/theme/app_text_styles.dart';
+
+class CustomTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+
+  const CustomTextField({
+    super.key,
+    required this.controller,
+    required this.hintText,
+    this.validator,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      maxLines: 2,
+      minLines: 2,
+      controller: controller,
+      style: AppTextStyles.bodyDefault16.copyWith(
+        color: AppColors.whiteColor,
+      ),
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(
+            color: AppColors.borderColor,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.zero,
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(
+            color: AppColors.borderColor,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.zero,
+        ),
+        errorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Colors.red,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.zero,
+        ),
+        focusedErrorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Colors.red,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.zero,
+        ),
+        hintText: hintText,
+        hintStyle: AppTextStyles.buttonPlaceholderText.copyWith(
+          color: AppColors.whiteColor.withAlpha((0.6 * 255).toInt()),
+        ),
+        fillColor: AppColors.darkBackground,
+        filled: true,
+      ),
+      validator: validator,
+      onChanged: onChanged,
+    );
+  }
+}
+
+/* Fin lib\widgets\custom_text_field.dart */
+
+/* Inicio lib\widgets\custom_toggle_button.dart */
+import 'package:flutter/material.dart';
+import 'package:anamnesis_app/theme/app_colors.dart';
+import 'package:anamnesis_app/theme/app_text_styles.dart';
+
+class CustomToggleButton extends StatelessWidget {
+  final String text;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  const CustomToggleButton({
+    super.key,
+    required this.text,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Borde de color diferente si está seleccionado
+    final Color borderColor = isSelected
+        ? const Color(0xFF038BED)  // ejemplo: azul al estar seleccionado
+        : const Color(0xFFC0C5E0); // gris sutil si no está seleccionado
+
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.transparent, 
+          border: Border.all(
+            color: borderColor,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          text,
+          style: AppTextStyles.bodyDefault16.copyWith(
+            color: AppColors.whiteColor,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* Fin lib\widgets\custom_toggle_button.dart */
+
+/* Inicio pubspec.yaml */
+name: anamnesis_app
+description: A new Flutter project.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  provider: ^6.0.5  # <-- Se agrega la dependencia para Provider
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Futura
+      fonts:
+        - asset: assets/fonts/Futura-Book.ttf
+          weight: 400
+        - asset: assets/fonts/Futura-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Futura-Light.ttf
+          weight: 300
+
+/* Fin pubspec.yaml */
+
+/* Inicio test\widget_test.dart */
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:anamnesis_app/main.dart';
+
+void main() {
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const MyApp());
+
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
+  });
+}
+
+/* Fin test\widget_test.dart */
+
+/* Inicio web\manifest.json */
+{
+    "name": "anamnesis_app",
+    "short_name": "anamnesis_app",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "A new Flutter project.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
+
+/* Fin web\manifest.json */

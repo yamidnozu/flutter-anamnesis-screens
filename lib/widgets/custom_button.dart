@@ -23,13 +23,13 @@ class CustomButton extends StatelessWidget {
         isEnabled ? activeColor : AppColors.buttonColor; // #585853
 
     return SizedBox(
-      width: double.infinity, // Ocupa todo el ancho
+      width: double.infinity,
       height: 50.0,
       child: ElevatedButton(
         onPressed: isEnabled ? onPressed : null,
         style: ElevatedButton.styleFrom(
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // esquinas cuadradas
+            borderRadius: BorderRadius.zero,
           ),
           backgroundColor: effectiveColor,
           disabledBackgroundColor: AppColors.buttonColor,

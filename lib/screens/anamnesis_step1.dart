@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:anamnesis_app/providers/anamnesis_provider.dart';
 import 'package:anamnesis_app/screens/anamnesis_step2.dart';
 import 'package:anamnesis_app/widgets/custom_text_field.dart';
 import 'package:anamnesis_app/widgets/custom_button.dart';
@@ -15,8 +17,17 @@ class AnamnesisStep1 extends StatefulWidget {
 
 class AnamnesisStep1State extends State<AnamnesisStep1> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _operationsController = TextEditingController();
-  final TextEditingController _illnessController = TextEditingController();
+  late TextEditingController _operationsController;
+  late TextEditingController _illnessController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tomamos el estado actual del Provider para rellenar los controladores
+    final provider = context.read<AnamnesisProvider>();
+    _operationsController = TextEditingController(text: provider.operations);
+    _illnessController = TextEditingController(text: provider.illness);
+  }
 
   @override
   void dispose() {
@@ -25,34 +36,28 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
     super.dispose();
   }
 
-  /// Verifica si los campos obligatorios están llenos
-  bool _isButtonEnabled() {
-    return _operationsController.text.isNotEmpty &&
-        _illnessController.text.isNotEmpty;
+  bool _isButtonEnabled(AnamnesisProvider provider) {
+    // Validamos a partir del provider (puede ser provider.isStep1Valid)
+    return provider.isStep1Valid;
   }
 
-  /// Navega a la segunda pantalla si los campos son válidos
   void _goToStep2() {
     if (_formKey.currentState!.validate()) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => AnamnesisStep2(
-            operations: _operationsController.text,
-            illness: _illnessController.text,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => const AnamnesisStep2()),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Escuchamos los cambios del provider para refrescar la UI (usamos watch).
+    final anamnesisProvider = context.watch<AnamnesisProvider>();
+    final buttonEnabled = _isButtonEnabled(anamnesisProvider);
+
     return Scaffold(
-      /// Permite que el cuerpo se redimensione al mostrar el teclado
       resizeToAvoidBottomInset: true,
-      
-      /// Botón fijado en la parte inferior
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
           left: Constants.defaultPadding,
@@ -61,11 +66,10 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
         ),
         child: CustomButton(
           text: 'Siguiente',
-          onPressed: _isButtonEnabled() ? _goToStep2 : null,
-          isEnabled: _isButtonEnabled(),
+          onPressed: buttonEnabled ? _goToStep2 : null,
+          isEnabled: buttonEnabled,
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(Constants.defaultPadding),
@@ -77,15 +81,11 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
                 _buildHeader(context),
                 const SizedBox(height: 24),
                 _buildFormTitle(),
-                const SizedBox(height: 0),
                 _buildMandatoryLabel(),
-                const SizedBox(height: 0),
-                _buildOperationsField(),
-                const SizedBox(height: 0),
-                _buildIllnessField(),
-                // El espacio adicional va antes del botón,
-                // pero como el botón está en bottomNavigationBar,
-                // ya no necesitamos al final un gran SizedBox
+                const SizedBox(height: 24),
+                _buildOperationsField(anamnesisProvider),
+                const SizedBox(height: 24),
+                _buildIllnessField(anamnesisProvider),
               ],
             ),
           ),
@@ -94,7 +94,6 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
     );
   }
 
-  /// Header con flecha de retroceso y texto de bienvenida
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
@@ -102,7 +101,7 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(
-              Icons.chevron_left,  // Flecha sin palito
+              Icons.chevron_left,
               color: Colors.white,
             ),
           ),
@@ -111,7 +110,7 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
             'Bienvenido a tu nuevo comienzo',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyLight14.copyWith(
-              color: const Color(0xFFC0C5E0), // #C0C5E0
+              color: const Color(0xFFC0C5E0),
             ),
           ),
         ),
@@ -119,7 +118,6 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
     );
   }
 
-  /// Título de la sección
   Widget _buildFormTitle() {
     return Text(
       'Completa la siguiente información',
@@ -129,7 +127,6 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
     );
   }
 
-  /// Texto "Todos los campos son obligatorios*"
   Widget _buildMandatoryLabel() {
     return RichText(
       text: TextSpan(
@@ -155,22 +152,18 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
     );
   }
 
-  /// Campo de operaciones
-  Widget _buildOperationsField() {
+  Widget _buildOperationsField(AnamnesisProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RichText(
-           maxLines: 5,
-           textWidthBasis: TextWidthBasis.longestLine,
           text: TextSpan(
             style: AppTextStyles.bodyDefault16.copyWith(
               color: AppColors.whiteColor,
             ),
             children: const [
               TextSpan(
-                text:
-                    '¿Ha tenido operaciones? ¿Cuáles y hace cuánto tiempo?',
+                text: '¿Ha tenido operaciones? ¿Cuáles y hace cuánto tiempo?',
               ),
               TextSpan(
                 text: '*',
@@ -189,7 +182,9 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
         CustomTextField(
           controller: _operationsController,
           hintText: 'Escribe aquí',
-          onChanged: (_) => setState(() {}),
+          onChanged: (value) {
+            provider.operations = value;
+          },
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Este campo es obligatorio';
@@ -201,8 +196,7 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
     );
   }
 
-  /// Campo de enfermedades
-  Widget _buildIllnessField() {
+  Widget _buildIllnessField(AnamnesisProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -233,7 +227,9 @@ class AnamnesisStep1State extends State<AnamnesisStep1> {
         CustomTextField(
           controller: _illnessController,
           hintText: 'Escribe aquí',
-          onChanged: (_) => setState(() {}),
+          onChanged: (value) {
+            provider.illness = value;
+          },
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Este campo es obligatorio';
