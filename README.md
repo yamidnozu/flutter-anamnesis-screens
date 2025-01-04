@@ -18,7 +18,7 @@ múltiples tamaños de pantalla.
 
 2. **Clonar el Repositorio**:
    ```bash
-   git clone https://github.com/tu_usuario/anamnesis_app.git
+   git clone https://github.com/yamidnozu/flutter-anamnesis-screens.git
    cd anamnesis_app
    ```
 
